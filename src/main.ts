@@ -1,79 +1,117 @@
-import { ChatUser } from "./chat/Models";
+import { type ChatMessage, ChatUser } from "./chat/Models";
 import { ChatManager } from "./chat/ChatManager";
 
+// Настраиваем обработчик уведомлений
+const notificationHandler = (dialogId: string, message: ChatMessage) => {
+    console.log(`Новое сообщение в диалоге ${dialogId} от ${message.author.name}`);
+};
+
 const chatManager = new ChatManager();
+chatManager.setNotificationHandler(notificationHandler);
 
 // Создаем пользователей
-const client = new ChatUser("user1", "User name", "client");
-const employee = new ChatUser("user2", "Employee name", "employee");
+const client = new ChatUser("client-1", "Иван Петров", "client");
+const employee = new ChatUser("emp-1", "Мастер Алексей", "employee");
 
 // Создаем диалог
 const dialog = chatManager.createDialog([client, employee]);
-// Пример 1: Простое сообщение
-const message1 = chatManager.sendMessage(
-  dialog.id,
-  "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla vel nisl et ipsum ultrices pharetra.",
-  client
-);
-console.log("Простое сообщение:", message1.formattedContent);
 
-// Пример 2: Сообщение с жирным и курсивным текстом
-const message2 = chatManager.sendMessage(
-  dialog.id,
-  "[b]Lorem ipsum dolor[/b] sit amet, [i]consectetur adipiscing elit[/i]. Vivamus luctus urna sed urna ultricies ac tempor dui sagittis.",
-  employee
-);
-console.log("Сообщение с форматированием:", message2.formattedContent);
+// Подписываемся на уведомления диалога
+dialog.subscribe((notification) => {
+    switch (notification.type) {
+        case 'newMessage':
+            console.log(`Диалог ${notification.dialogId}: Новое сообщение от ${notification.message?.author.name}`);
+            break;
+        case 'statusChange':
+            console.log(`Диалог ${notification.dialogId}: Статус сообщения изменен на ${notification.message?.status}`);
+            break;
+    }
+});
 
-// Пример 3: Список с маркером
-const message3 = chatManager.sendMessage(
-  dialog.id,
-  "[b]Tasks to complete:[/b]\n[m]Lorem ipsum dolor sit amet[/m]",
-  employee
+// Клиент пишет первое сообщение
+const clientFirstMessage = chatManager.sendMessage(
+    dialog.id,
+    "Здравствуйте! Подскажите, пожалуйста, когда будет готова моя Тойота Камри? Номер заказа 123-456",
+    client
 );
-console.log("Сообщение с маркерами:", message3.formattedContent);
 
-// Пример 4: Гиперссылки
-const message4 = chatManager.sendMessage(
-  dialog.id,
-  "More details can be found at [link=https://example.com]this link[/link].",
-  employee
+// Сообщение прочитано сотрудником
+dialog.updateMessageStatus(clientFirstMessage.id, "read");
+console.log(`Статус сообщения клиента: ${clientFirstMessage.status}`);
+
+// Сотрудник отвечает с цитированием
+chatManager.sendMessage(
+    dialog.id,
+    "[b]Добрый день, Иван![/b]\nПо вашему обращению:\n" +
+    "Я сейчас посмотрю информацию по вашему заказу.",
+    employee,
+    clientFirstMessage // Добавляем цитирование
 );
-console.log("Сообщение с ссылкой:", message4.formattedContent);
 
-// Пример 5: Цитирование сообщения
-const quotedMessage = chatManager.sendMessage(
-  dialog.id,
-  "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-  client
+// Сотрудник отправляет информацию о работах с фотографиями
+const workReportMessage = chatManager.sendMessage(
+    dialog.id,
+    "[b]По вашему автомобилю выполнены следующие работы:[/b]\n" +
+    "[ul]" +
+    "[li]Замена масла в двигателе[/li]" +
+    "[li]Диагностика ходовой части[/li]" +
+    "[li]Замена тормозных колодок[/li]" +
+    "[/ul]\n" +
+    "Машина будет готова [i]через 30 минут[/i].\n" +
+    "Прикрепляю фотографии выполненных работ:",
+    employee,
+    null,
+    ["brake-replacement.jpg", "oil-change.jpg", "diagnostic-report.pdf"] // Добавляем вложения
 );
-const message5 = chatManager.sendMessage(
-  dialog.id,
-  "Quoting your message: [b]Lorem ipsum dolor sit amet, consectetur adipiscing elit[/b]. Please confirm the details.",
-  employee,
-  quotedMessage
+
+// Клиент получил сообщение с отчетом
+dialog.updateMessageStatus(workReportMessage.id, "delivered");
+console.log(`Статус сообщения с отчётом: ${workReportMessage.status}`);
+
+// Клиент спрашивает про стоимость
+chatManager.sendMessage(
+    dialog.id,
+    "Спасибо за информацию и фотографии! А сколько будет стоить ремонт?",
+    client
 );
-console.log("Сообщение с цитированием:", message5.formattedContent);
 
-// Пример 6: Сообщение с вложениями
-const message6 = chatManager.sendMessage(
-  dialog.id,
-  "Attached document contains project details. Lorem ipsum dolor sit amet.",
-  client,
-  null,
-  ["project-details.pdf"]
+// Сотрудник отправляет важную информацию
+const paymentMessage = chatManager.sendMessage(
+    dialog.id,
+    "[b]Стоимость работ:[/b]\n" +
+    "[m]Общая сумма: 12 500 000 суммов[/m]\n\n" +
+    "Оплатить можно картой или наличными. Подробный список цен на услуги можно посмотреть здесь: " +
+    "[link=https://example.com/prices]прайс-лист[/link]",
+    employee
 );
-console.log("Сообщение с вложениями:", message6);
 
-// Пример 7: Комбинированное сообщение
-const message7 = chatManager.sendMessage(
-  dialog.id,
-  "[b]Project Overview:[/b]\n [ul]\n[li]Lorem ipsum dolor sit amet[/li]\n[li]Consectetur adipiscing elit[/li]\n[li]Nulla vel nisl et ipsum ultrices pharetra[/li]\n [/ul]\n[link=https://example.com]Click here for more information[/link]",
-  employee
+// Клиент прочитал информацию об оплате
+dialog.updateMessageStatus(paymentMessage.id, "read");
+
+// Клиент цитирует сумму в ответе
+chatManager.sendMessage(
+    dialog.id,
+    "Хорошо, я подъеду через 40 минут с картой. Сумма: [b]12 500 000 сумм[/b]",
+    client,
+    paymentMessage // Цитируем сообщение о стоимости
 );
-console.log("Комбинированное сообщение:", message7.formattedContent);
 
-// Пример 8: Поиск по тексту
-const foundMessages = dialog.searchMessages("Project Overview:");
+// Сотрудник прощается
+const finalMessage = chatManager.sendMessage(
+    dialog.id,
+    "Отлично! Будем ждать вас. [m]Не забудьте, пожалуйста, паспорт для оформления документов.[/m]",
+    employee
+);
 
-console.log("Поиск:", foundMessages);
+// Проверяем статусы сообщений
+console.log("\nСтатусы сообщений:");
+[clientFirstMessage, workReportMessage, paymentMessage, finalMessage].forEach(msg => {
+    console.log(`${msg.author.name}: ${msg.content.slice(0, 20)}... - ${msg.status}`);
+});
+
+// Поиск сообщений про стоимость
+console.log("\nПоиск сообщений про стоимость:");
+const searchResults = dialog.searchMessages("стоимость");
+searchResults.forEach(message => {
+    console.log(`${message.author.name}: ${message.content}`);
+});

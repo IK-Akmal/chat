@@ -1,5 +1,5 @@
 import { ChatDialog, ChatMessage, ChatUser } from "./Models";
-import { Formatter } from "./Formatting";
+import { BBCodeParser } from "./BBCodeParser";
 
 export class ChatManager {
   private dialogs: ChatDialog[];
@@ -35,7 +35,10 @@ export class ChatManager {
 
     const messageId = `msg-${Date.now()}`;
     const timestamp = new Date().toISOString();
-    const formattedContent = Formatter.applyFormatting(content);
+    const formattedContent = BBCodeParser.parse(content);
+
+    console.debug({formattedContent})
+
     const message = new ChatMessage(
       messageId,
       content,
