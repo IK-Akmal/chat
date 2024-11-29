@@ -4,44 +4,22 @@ export type MessageStatus = "sent" | "delivered" | "read" | "error";
 
 // ChatUser: Участник чата
 export class ChatUser {
-  id: string;
-  name: string;
-  role: UserRole;
-
-  constructor(id: string, name: string, role: UserRole) {
-    this.id = id;
-    this.name = name;
-    this.role = role;
-  }
+  constructor(public id: string, public name: string, public role: UserRole) {}
 }
 
 // ChatMessage: Сообщение
 export class ChatMessage {
-  id: string;
-  content: string;
-  formattedContent: string;
-  author: ChatUser;
-  timestamp: string;
-  attachments: string[];
-  quotedMessage: ChatMessage | null;
   status: MessageStatus;
 
   constructor(
-    id: string,
-    content: string,
-    author: ChatUser,
-    timestamp: string,
-    formattedContent: string,
-    attachments: string[] = [],
-    quotedMessage: ChatMessage | null = null
+    public id: string,
+    public content: string,
+    public author: ChatUser,
+    public timestamp: string,
+    public formattedContent: string,
+    public attachments: string[] = [],
+    public quotedMessage: ChatMessage | null = null
   ) {
-    this.id = id;
-    this.content = content;
-    this.formattedContent = formattedContent;
-    this.author = author;
-    this.timestamp = timestamp;
-    this.attachments = attachments;
-    this.quotedMessage = quotedMessage;
     this.status = "sent";
   }
 }
